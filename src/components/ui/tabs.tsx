@@ -8,9 +8,13 @@ const TabsContext = React.createContext<{
 
 const Tabs = React.forwardRef<
     HTMLDivElement,
-    React.HTMLAttributes<HTMLDivElement> & { defaultValue: string }
->(({ className, defaultValue, children, ...props }, ref) => {
-    const [activeTab, setActiveTab] = React.useState(defaultValue);
+    React.HTMLAttributes<HTMLDivElement> & { defaultValue?: string; value?: string; onValueChange?: (value: string) => void }
+>(({ className, defaultValue, value, onValueChange, children, ...props }, ref) => {
+    const [activeTabState, setActiveTabState] = React.useState(defaultValue || "");
+
+    // Controlled vs Uncontrolled
+    const activeTab = value !== undefined ? value : activeTabState;
+    const setActiveTab = onValueChange || setActiveTabState;
 
     return (
         <TabsContext.Provider value={{ activeTab, setActiveTab }}>

@@ -10,11 +10,11 @@ export default function ThreatHunting() {
     const [logs, setLogs] = useState<LogEntry[]>([]);
 
     const mockLogs: LogEntry[] = [
-        { id: '1', timestamp: new Date().toISOString(), level: 'critical', source: 'Endpoint-05', event: 'Suspicious PowerShell Execution', message: 'powershell.exe -enc aW52b2tlLW1pbWlrYXR6' },
-        { id: '2', timestamp: new Date(Date.now() - 300000).toISOString(), level: 'high', source: 'Firewall', event: 'C2 Beacon detected', message: 'Outbound connection to known C2 IP 45.33.22.11' },
-        { id: '3', timestamp: new Date(Date.now() - 600000).toISOString(), level: 'medium', source: 'Auth', event: 'Privilege Escalation Attempt', message: 'User "guest" attempted to access /etc/shadow' },
-        { id: '4', timestamp: new Date(Date.now() - 900000).toISOString(), level: 'low', source: 'System', event: 'Service Stopped', message: 'Print Spooler service stopped unexpectedly' },
-        { id: '5', timestamp: new Date(Date.now() - 1200000).toISOString(), level: 'info', source: 'Network', event: 'Large File Transfer', message: '10GB transferred to internal backup server' },
+        { id: '1', timestamp: new Date().toISOString(), level: 'critical', source: 'Endpoint-05', event: 'Suspicious PowerShell Execution', details: { command: 'powershell.exe -enc ...' } },
+        { id: '2', timestamp: new Date(Date.now() - 300000).toISOString(), level: 'critical', source: 'Firewall', event: 'C2 Beacon detected', details: { dest_ip: '45.33.22.11' } },
+        { id: '3', timestamp: new Date(Date.now() - 600000).toISOString(), level: 'warning', source: 'Auth', event: 'Privilege Escalation Attempt', details: { user: 'guest', target: '/etc/shadow' } },
+        { id: '4', timestamp: new Date(Date.now() - 900000).toISOString(), level: 'info', source: 'System', event: 'Service Stopped', details: { service: 'Print Spooler' } },
+        { id: '5', timestamp: new Date(Date.now() - 1200000).toISOString(), level: 'info', source: 'Network', event: 'Large File Transfer', details: { size: '10GB', dest: 'BackupServer' } },
     ];
 
     const fetchLogs = async (query = '') => {

@@ -10,6 +10,7 @@ interface CostItem {
     amount: number;
     currency: string;
     trend: string;
+    [key: string]: any;
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];

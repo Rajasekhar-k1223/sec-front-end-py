@@ -53,7 +53,7 @@ export default function AttackPaths() {
                         {/* Connecting Line */}
                         <div className="absolute top-1/2 left-0 w-full h-1 bg-gradient-to-r from-red-500/50 via-orange-500/50 to-yellow-500/50 -z-10 transform -translate-y-1/2" />
 
-                        {steps.map((step, index) => {
+                        {steps.map((step: any, index: number) => {
                             const Icon = step.icon;
                             return (
                                 <div key={step.id} className="flex flex-col items-center bg-background p-4 rounded-lg border shadow-sm z-10 w-48 text-center space-y-2">

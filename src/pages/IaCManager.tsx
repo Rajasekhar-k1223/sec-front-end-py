@@ -325,7 +325,7 @@ export default function IaCManager() {
                                             <div key={stack.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
                                                 <div className="flex items-start gap-4">
                                                     <div className={`p-2 rounded-md ${stack.tool === 'Terraform' ? 'bg-purple-500/10' : 'bg-orange-500/10'}`}>
-                                                        {stack.tool === 'Terraform' ? <Box className={`h-5 w-5 ${stack.tool === 'Terraform' ? 'text-purple-500' : 'text-orange-500'}`} /> : <Terminal className={`h-5 w-5 ${stack.tool === 'Terraform' ? 'text-purple-500' : 'text-orange-500'}`} />}
+                                                        {stack.tool === 'Terraform' ? <Box className="h-5 w-5 text-purple-500" /> : <Terminal className="h-5 w-5 text-orange-500" />}
                                                     </div>
                                                     <div>
                                                         <h4 className="font-semibold">{stack.name}</h4>

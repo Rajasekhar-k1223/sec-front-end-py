@@ -104,7 +104,7 @@ export default function ServicePricing() {
                                 <span className="text-muted-foreground ml-1">{plan.period}</span>
                             </div>
                             <ul className="space-y-3">
-                                {plan.features.map((feature) => (
+                                {plan.features.map((feature: string) => (
                                     <li key={feature} className="flex items-center text-sm">
                                         <Check className="h-4 w-4 text-green-500 mr-2 shrink-0" />
                                         {feature}

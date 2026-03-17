@@ -39,5 +39,10 @@ export const authService = {
     getCurrentUser: async (): Promise<User> => {
         const response = await api.get(ENDPOINTS.AUTH.ME);
         return response.data;
+    },
+
+    impersonate: async (tenantId: string): Promise<AuthResponse> => {
+        const response = await api.post(`/auth/impersonate/${tenantId}`);
+        return response.data;
     }
 };

@@ -109,7 +109,7 @@ export default function LogExplorer() {
                                                         log.level === 'error' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' :
                                                             log.level === 'warning' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
                                                                 'bg-blue-500/10 text-blue-500 border-blue-500/20'}`}>
-                                                    {log.level.toUpperCase()}
+                                                    {log.level?.toUpperCase() || 'INFO'}
                                                 </span>
                                             </td>
                                             <td className="p-3">{log.source}</td>

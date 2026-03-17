@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,10 +11,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-import { agentsService } from '@/lib/api';
+import { agentsService, forensicsService } from '@/lib/api';
 import AgentMetricsChart from '@/components/dashboard/AgentMetricsChart';
 import AgentSoftwareTable from '@/components/dashboard/AgentSoftwareTable';
 import AgentLogsViewer from '@/components/dashboard/AgentLogsViewer';
+import AgentForensicsViewer from '@/components/dashboard/AgentForensicsViewer';
 
 // Agent Interface matching Backend Model
 interface Agent {
@@ -28,14 +30,23 @@ interface Agent {
 }
 
 export default function Agents() {
+    const [searchParams] = useSearchParams();
+    const tenantId = searchParams.get('tenant_id');
     const [agents, setAgents] = useState<Agent[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null);
+    const [activeTabs, setActiveTabs] = useState<Record<string, string>>({});
+
+    const getActiveTab = (agentId: string) => activeTabs[agentId] || 'overview';
+
+    const setTab = (agentId: string, tab: string) => {
+        setActiveTabs(prev => ({ ...prev, [agentId]: tab }));
+    };
 
     useEffect(() => {
         const fetchAgents = async () => {
             try {
-                const response = await agentsService.getAgents();
+                const response = await agentsService.getAgents(tenantId || undefined);
                 setAgents(response.data);
             } catch (error) {
                 console.error("Failed to fetch agents", error);
@@ -47,7 +58,7 @@ export default function Agents() {
         // Refresh list occasionally too
         const interval = setInterval(fetchAgents, 30000);
         return () => clearInterval(interval);
-    }, []);
+    }, [tenantId]);
 
     const toggleExpand = (id: string) => {
         setExpandedAgentId(expandedAgentId === id ? null : id);
@@ -68,6 +79,22 @@ export default function Agents() {
         if (os.toLowerCase().includes('linux')) return <Server className="h-4 w-4" />;
         return <Server className="h-4 w-4" />;
     }
+
+    const [dumping, setDumping] = useState<string | null>(null);
+
+    const handleDumpRequest = async (agentId: string) => {
+        if (!confirm("Are you sure you want to trigger a full memory dump? This may impact agent performance.")) return;
+        setDumping(agentId);
+        try {
+            await forensicsService.triggerDump(agentId);
+            alert("Forensics command sent! The memory dump will be uploaded shortly.");
+        } catch (error) {
+            console.error("Forensics failed", error);
+            alert("Failed to trigger forensics dump.");
+        } finally {
+            setDumping(null);
+        }
+    };
 
     if (loading) {
         return <div className="p-8 text-muted-foreground">Loading agents...</div>;
@@ -144,23 +171,78 @@ export default function Agents() {
                                     {expandedAgentId === agent.id && (
                                         <div className="p-4 bg-secondary/10 border-t border-border">
                                             <div className="flex flex-col space-y-4">
-                                                <div className="flex space-x-2 border-b border-border">
-                                                    <div className="pb-2 cursor-pointer border-b-2 border-primary font-medium text-sm">Overview</div>
-                                                    {/* TODO: Add proper Tabs component later for cleaner switching */}
+                                                <div className="flex space-x-6 border-b border-border mb-4">
+                                                    <div
+                                                        className={cn("pb-2 cursor-pointer border-b-2 font-medium text-sm transition-colors", getActiveTab(agent.id) === 'overview' ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}
+                                                        onClick={(e) => { e.stopPropagation(); setTab(agent.id, 'overview'); }}
+                                                    >
+                                                        Overview
+                                                    </div>
+                                                    <div
+                                                        className={cn("pb-2 cursor-pointer border-b-2 font-medium text-sm transition-colors", getActiveTab(agent.id) === 'logs' ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}
+                                                        onClick={(e) => { e.stopPropagation(); setTab(agent.id, 'logs'); }}
+                                                    >
+                                                        Logs
+                                                    </div>
+                                                    <div
+                                                        className={cn("pb-2 cursor-pointer border-b-2 font-medium text-sm transition-colors", getActiveTab(agent.id) === 'forensics' ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}
+                                                        onClick={(e) => { e.stopPropagation(); setTab(agent.id, 'forensics'); }}
+                                                    >
+                                                        Forensics & Artifacts
+                                                    </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                    <div>
-                                                        <AgentMetricsChart agentId={agent.id} />
+                                                {getActiveTab(agent.id) === 'overview' && (
+                                                    <div className="space-y-4">
+                                                        <div className="flex justify-between items-center">
+                                                            <div className="text-sm font-medium">Quick Actions</div>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDumpRequest(agent.id);
+                                                                }}
+                                                                disabled={dumping === agent.id}
+                                                            >
+                                                                {dumping === agent.id ? "Requesting..." : "Request Memory Dump"}
+                                                            </Button>
+                                                        </div>
+                                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                            <div>
+                                                                <AgentMetricsChart agentId={agent.id} />
+                                                            </div>
+                                                            <div>
+                                                                <AgentSoftwareTable agentId={agent.id} />
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <AgentSoftwareTable agentId={agent.id} />
-                                                    </div>
-                                                </div>
+                                                )}
 
-                                                <div>
+                                                {getActiveTab(agent.id) === 'logs' && (
                                                     <AgentLogsViewer agentId={agent.id} />
-                                                </div>
+                                                )}
+
+                                                {getActiveTab(agent.id) === 'forensics' && (
+                                                    <div className="space-y-4">
+                                                        <div className="flex justify-between items-center">
+                                                            <h4 className="text-sm font-bold">Forensics Actions</h4>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDumpRequest(agent.id);
+                                                                }}
+                                                                disabled={dumping === agent.id}
+                                                            >
+                                                                <Download className="mr-2 h-4 w-4" />
+                                                                {dumping === agent.id ? "Requesting..." : "Trigger New Memory Dump"}
+                                                            </Button>
+                                                        </div>
+                                                        <AgentForensicsViewer agentId={agent.id} />
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     )}

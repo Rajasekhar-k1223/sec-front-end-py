@@ -17,7 +17,6 @@ import SecurityOps from '@/pages/SecurityOps';
 import CloudSecurity from '@/pages/CloudSecurity';
 import ThreatHunting from '@/pages/ThreatHunting';
 import SoftwareHub from '@/pages/SoftwareHub';
-import ComplianceManager from '@/pages/ComplianceManager';
 import AuditLogs from '@/pages/AuditLogs';
 import TenantsManagement from '@/pages/TenantsManagement';
 import DevSecOps from '@/pages/DevSecOps';
@@ -45,8 +44,10 @@ import ChaosEngineering from '@/pages/ChaosEngineering';
 import DeveloperHub from '@/pages/DeveloperHub';
 
 // New Pages (Governance)
+import ComplianceManager from '@/pages/ComplianceManager';
 import AiGovernance from '@/pages/AiGovernance';
 import LlmOps from '@/pages/LlmOps';
+import Automation from '@/pages/Automation';
 import Policies from '@/pages/Policies';
 
 // New Pages (Admin)
@@ -121,7 +122,8 @@ function App() {
             <Route path="compliance" element={<ComplianceManager />} />
             <Route path="ai-gov" element={<AiGovernance />} />
             <Route path="llmops" element={<LlmOps />} />
-            <Route path="automation" element={<Policies />} />
+            <Route path="automation" element={<Automation />} />
+            <Route path="policies" element={<Policies />} />
 
             {/* Administration */}
             <Route path="finops" element={<FinOps />} />

@@ -1,7 +1,19 @@
 import axios from 'axios';
 
 // Map to Python Backend
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api/v1';
+const getBaseUrl = () => {
+    const envUrl = import.meta.env.VITE_API_URL;
+    if (envUrl) {
+        // Ensure it always starts with https in production unless localhost
+        if (envUrl.includes('monitorix.co.in') && envUrl.startsWith('http:')) {
+            return envUrl.replace('http:', 'https:');
+        }
+        return envUrl;
+    }
+    return 'https://sentinelx-api.monitorix.co.in/api/v1';
+};
+
+const BASE_URL = getBaseUrl();
 
 export const api = axios.create({
     baseURL: BASE_URL,
@@ -120,6 +132,9 @@ export const complianceService = {
     },
     getEvidence: async (frameworkId: string) => {
         return api.get(`${ENDPOINTS_COMPLIANCE.EVIDENCE}/${frameworkId}`);
+    },
+    runScan: async (frameworkId: string) => {
+        return api.post(`/compliance/scan/${frameworkId}`);
     }
 };
 
@@ -132,6 +147,15 @@ export const auditService = {
 export const tenantsService = {
     getTenants: async () => {
         return api.get(ENDPOINTS_TENANTS.LIST);
+    },
+    createTenant: async (data: any) => {
+        return api.post(ENDPOINTS_TENANTS.LIST, data);
+    },
+    updateTenant: async (id: string, data: any) => {
+        return api.patch(`${ENDPOINTS_TENANTS.LIST}${id}/`, data);
+    },
+    deleteTenant: async (id: string) => {
+        return api.delete(`${ENDPOINTS_TENANTS.LIST}${id}/`);
     }
 };
 
@@ -151,17 +175,17 @@ export const alertsService = {
 };
 
 export const agentsService = {
-    getAgents: async () => {
-        return api.get(ENDPOINTS.AGENTS.LIST);
+    getAgents: async (tenantId?: string) => {
+        return api.get(ENDPOINTS.AGENTS.LIST, { params: { tenant_id: tenantId } });
     },
     getMetrics: async (agentId: string) => {
-        return api.get(`${ENDPOINTS.AGENTS.LIST}${agentId}/metrics`);
+        return api.get(`${ENDPOINTS.AGENTS.LIST}/${agentId}/metrics`);
     },
     getSoftware: async (agentId: string) => {
-        return api.get(`${ENDPOINTS.AGENTS.LIST}${agentId}/software`);
+        return api.get(`${ENDPOINTS.AGENTS.LIST}/${agentId}/software`);
     },
     getLogs: async (agentId: string) => {
-        return api.get(`${ENDPOINTS.AGENTS.LIST}${agentId}/logs`);
+        return api.get(`${ENDPOINTS.AGENTS.LIST}/${agentId}/logs`);
     }
 };
 
@@ -200,7 +224,7 @@ export const jobsService = {
 
 export const patchingService = {
     getPatches: async () => {
-        return api.get('/vuln/');
+        return api.get('/vuln');
     }
 };
 
@@ -212,10 +236,13 @@ export const threatIntelService = {
 
 export const incidentsService = {
     getIncidents: async () => {
-        return api.get('/incidents/');
+        return api.get('/incidents');
     },
     createIncident: async (incident: any) => {
-        return api.post('/incidents/', incident);
+        return api.post('/incidents', incident);
+    },
+    analyzeIncident: async (incidentId: string) => {
+        return api.post(`/incidents/${incidentId}/analyze`);
     }
 };
 
@@ -258,6 +285,9 @@ export const llmOpsService = {
 export const policiesService = {
     getPolicies: async () => {
         return api.get('/policies/');
+    },
+    generatePolicy: async (prompt: string) => {
+        return api.post('/policies/generate', { prompt });
     }
 };
 
@@ -348,6 +378,15 @@ export const futureOpsService = {
     },
     getActions: async () => {
         return api.get('/future-ops/actions');
+    },
+    runMitigation: async (predictionId: string) => {
+        return api.post(`/future-ops/run-action/${predictionId}`);
+    },
+    getHealth: async () => {
+        return api.get('/future-ops/doctor/health');
+    },
+    healSystem: async (systemId: string, issue: string) => {
+        return api.post(`/future-ops/doctor/heal/${systemId}?issue=${issue}`);
     }
 };
 
@@ -360,5 +399,44 @@ export const swarmService = {
     },
     getEvents: async () => {
         return api.get('/swarm/events');
+    }
+};
+
+export const forensicsService = {
+    triggerDump: async (agentId: string) => {
+        return api.post(`/forensics/dump/${agentId}`);
+    },
+    getArtifacts: async (agentId?: string) => {
+        return api.get('/forensics/artifacts', { params: { agent_id: agentId } });
+    }
+};
+
+export const soarService = {
+    getPlaybooks: async () => {
+        return api.get('/soar/playbooks');
+    },
+    getExecutions: async () => {
+        return api.get('/soar/executions');
+    },
+    createPlaybook: async (data: any) => {
+        return api.post('/soar/playbooks', data);
+    },
+    runPlaybook: async (id: string) => {
+        return api.post(`/soar/run/${id}`);
+    }
+};
+
+export const billingService = {
+    getPlans: async () => {
+        return api.get('/billing/plans');
+    },
+    getPaymentMethods: async () => {
+        return api.get('/billing/payment-methods');
+    },
+    addPaymentMethod: async (data: any) => {
+        return api.post('/billing/payment-methods', data);
+    },
+    subscribe: async (planId: string) => {
+        return api.post(`/billing/subscribe?plan_id=${planId}`);
     }
 };

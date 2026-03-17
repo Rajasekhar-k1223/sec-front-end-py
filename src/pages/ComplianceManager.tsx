@@ -34,10 +34,10 @@ export default function ComplianceManager() {
                 const mappedData = response.data.map((item: any) => ({
                     id: item.id,
                     controlId: item.control_id,
-                    description: item.description,
-                    evidenceName: item.name,
-                    status: item.status,
-                    lastUpdated: item.last_updated
+                    description: item.data?.target || item.data?.agent_hostname || "Automated check",
+                    evidenceName: item.source_tool,
+                    status: "collected",
+                    lastUpdated: new Date(item.created_at).toLocaleString()
                 }));
                 setEvidence(mappedData);
             } catch (error) {
@@ -47,15 +47,43 @@ export default function ComplianceManager() {
         fetchEvidence();
     }, [activeTab]);
 
+    const [scanning, setScanning] = useState(false);
+
+    const handleScan = async () => {
+        setScanning(true);
+        try {
+            await complianceService.runScan(activeTab);
+            // Refresh evidence after scan
+            const response = await complianceService.getEvidence(activeTab);
+            const mappedData = response.data.map((item: any) => ({
+                id: item.id,
+                controlId: item.control_id,
+                description: item.data?.target || item.data?.agent_hostname || "Automated check",
+                evidenceName: item.source_tool,
+                status: "collected",
+                lastUpdated: new Date(item.created_at).toLocaleString()
+            }));
+            setEvidence(mappedData);
+        } catch (error) {
+            console.error("Scan failed", error);
+        } finally {
+            setScanning(false);
+        }
+    };
+
     return (
-        <div className="h-[calc(100vh-100px)] flex flex-col space-y-4">
+        <div className="h-[calc(100vh-100px)] flex flex-col space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-foreground">Compliance Manager</h2>
                     <p className="text-muted-foreground">Automate evidence collection for SOC2, ISO27001, and HIPAA.</p>
                 </div>
                 <div className="flex space-x-2">
-                    <Button><FileDown className="mr-2 h-4 w-4" /> Generate Audit Report</Button>
+                    <Button onClick={handleScan} disabled={scanning}>
+                        {scanning ? <Shield className="mr-2 h-4 w-4 animate-spin" /> : <Shield className="mr-2 h-4 w-4" />}
+                        {scanning ? 'Scanning...' : 'Run Auto-Scan'}
+                    </Button>
+                    <Button variant="outline"><FileDown className="mr-2 h-4 w-4" /> Generate Report</Button>
                 </div>
             </div>
 

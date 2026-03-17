@@ -21,13 +21,21 @@ export default function ThreatHunting() {
         try {
             const response = await threatHuntingService.searchLogs(query);
             if (response.data && response.data.length > 0) {
-                setLogs(response.data);
+                const mappedLogs: LogEntry[] = response.data.map((log: any) => ({
+                    id: log.id,
+                    timestamp: log.timestamp,
+                    level: log.level.toLowerCase(),
+                    source: log.source,
+                    event: log.message, // Map 'message' to 'event'
+                    details: { ...log.metadata, agent_id: log.agent_id } // Map 'metadata' to 'details'
+                }));
+                setLogs(mappedLogs);
             } else {
-                setLogs(mockLogs);
+                setLogs([]);
             }
         } catch (error) {
-            console.warn("Using mock threat logs:", error);
-            setLogs(mockLogs);
+            console.warn("Failed to fetch threat logs:", error);
+            setLogs([]);
         }
     };
 

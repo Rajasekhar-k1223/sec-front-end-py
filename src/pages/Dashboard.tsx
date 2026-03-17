@@ -29,43 +29,46 @@ interface DashboardStats {
     system_status: string;
 }
 
+interface ActivityItem {
+    id: number;
+    title: string;
+    description: string;
+    time: string;
+}
+
+interface ChartData {
+    traffic: any[];
+    threats: any[];
+}
+
 export default function Dashboard() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [chartData, setChartData] = useState<ChartData | null>(null);
+    const [activities, setActivities] = useState<ActivityItem[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Mock Data for Charts (until backend provides historical data)
-    const trafficData = [
-        { name: '00:00', traffic: 4000 },
-        { name: '04:00', traffic: 3000 },
-        { name: '08:00', traffic: 2000 },
-        { name: '12:00', traffic: 2780 },
-        { name: '16:00', traffic: 1890 },
-        { name: '20:00', traffic: 2390 },
-        { name: '23:59', traffic: 3490 },
-    ];
-
-    const threatData = [
-        { name: 'Mon', threats: 12 },
-        { name: 'Tue', threats: 19 },
-        { name: 'Wed', threats: 3 },
-        { name: 'Thu', threats: 5 },
-        { name: 'Fri', threats: 2 },
-        { name: 'Sat', threats: 0 },
-        { name: 'Sun', threats: 9 },
-    ];
-
     useEffect(() => {
-        const fetchStats = async () => {
+        const fetchData = async () => {
             try {
-                const response = await api.get(ENDPOINTS.DASHBOARD.STATS);
-                setStats(response.data);
+                const [statsRes, chartsRes, activityRes] = await Promise.all([
+                    api.get(ENDPOINTS.DASHBOARD.STATS),
+                    api.get('/dashboard/charts'),
+                    api.get('/dashboard/activity')
+                ]);
+                setStats(statsRes.data);
+                setChartData(chartsRes.data);
+                setActivities(activityRes.data);
             } catch (error) {
-                console.error("Failed to fetch dashboard stats", error);
+                console.error("Failed to fetch dashboard data", error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchStats();
+        fetchData();
+
+        // Refresh every minute
+        const interval = setInterval(fetchData, 60000);
+        return () => clearInterval(interval);
     }, []);
 
     if (loading) {
@@ -143,7 +146,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent className="pl-2">
                         <ResponsiveContainer width="100%" height={350}>
-                            <AreaChart data={trafficData}>
+                            <AreaChart data={chartData?.traffic || []}>
                                 <defs>
                                     <linearGradient id="colorTraffic" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#8884d8" stopOpacity={0.3} />
@@ -190,7 +193,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                         <ResponsiveContainer width="100%" height={350}>
-                            <BarChart data={threatData}>
+                            <BarChart data={chartData?.threats || []}>
                                 <XAxis
                                     dataKey="name"
                                     stroke="#888888"
@@ -225,16 +228,16 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                         <ul className="space-y-4">
-                            {[1, 2, 3].map((i) => (
-                                <li key={i} className="flex items-center justify-between border-b last:border-0 border-border pb-2 last:pb-0">
+                            {activities.map((item) => (
+                                <li key={item.id} className="flex items-center justify-between border-b last:border-0 border-border pb-2 last:pb-0">
                                     <div className="flex items-center space-x-3">
                                         <ArrowUpRight className="h-4 w-4 text-primary" />
                                         <div>
-                                            <p className="text-sm font-medium">User Login Success</p>
-                                            <p className="text-xs text-muted-foreground">admin@sec.com via Web</p>
+                                            <p className="text-sm font-medium">{item.title}</p>
+                                            <p className="text-xs text-muted-foreground">{item.description}</p>
                                         </div>
                                     </div>
-                                    <span className="text-xs text-muted-foreground">2 min ago</span>
+                                    <span className="text-xs text-muted-foreground">{item.time}</span>
                                 </li>
                             ))}
                         </ul>

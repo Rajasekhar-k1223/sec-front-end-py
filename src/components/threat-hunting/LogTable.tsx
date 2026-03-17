@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+import { ChevronRight, ChevronDown, ShieldAlert, Globe2 } from 'lucide-react';
 import { useState } from 'react';
 
 export interface LogEntry {
@@ -52,6 +52,8 @@ export default function LogTable({ logs }: LogTableProps) {
                         <TableHead className="w-[50px]"></TableHead>
                         <TableHead className="w-[180px]">Timestamp</TableHead>
                         <TableHead className="w-[100px]">Level</TableHead>
+                        <TableHead className="w-[80px]">Risk</TableHead>
+                        <TableHead className="w-[80px]">Origin</TableHead>
                         <TableHead className="w-[150px]">Source</TableHead>
                         <TableHead>Event</TableHead>
                     </TableRow>
@@ -69,18 +71,30 @@ export default function LogTable({ logs }: LogTableProps) {
                                         )}
                                     </Button>
                                 </TableCell>
-                                <TableCell className="font-mono text-xs">{log.timestamp}</TableCell>
+                                <TableCell className="font-mono text-xs">{new Date(log.timestamp).toLocaleString()}</TableCell>
                                 <TableCell>
                                     <Badge variant="outline" className={levelColor[log.level]}>
                                         {log.level.toUpperCase()}
                                     </Badge>
                                 </TableCell>
-                                <TableCell>{log.source}</TableCell>
+                                <TableCell>
+                                    <div className={`flex items-center font-bold text-xs ${log.details.risk_score > 70 ? 'text-red-500' : log.details.risk_score > 40 ? 'text-yellow-500' : 'text-green-500'}`}>
+                                        <ShieldAlert className="h-3 w-3 mr-1" />
+                                        {log.details.risk_score || 'N/A'}%
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex items-center text-xs text-muted-foreground font-mono">
+                                        <Globe2 className="h-3 w-3 mr-1 text-blue-500" />
+                                        {log.details.geo_ip || '??'}
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-sm">{log.source}</TableCell>
                                 <TableCell className="font-medium">{log.event}</TableCell>
                             </TableRow>
                             {expandedRows.has(log.id) && (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="bg-secondary/10 p-4">
+                                    <TableCell colSpan={7} className="bg-secondary/10 p-4">
                                         <pre className="text-xs font-mono bg-background p-4 rounded-md overflow-x-auto border border-border">
                                             {JSON.stringify(log.details, null, 2)}
                                         </pre>

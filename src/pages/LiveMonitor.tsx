@@ -8,14 +8,36 @@ export default function LiveMonitor() {
     const [isLive, setIsLive] = useState(false);
     const logsEndRef = useRef<HTMLDivElement>(null);
 
+    const [agentStatuses, setAgentStatuses] = useState<Record<string, string>>({});
+
     useEffect(() => {
+        let socket: WebSocket;
         if (isLive) {
-            const interval = setInterval(() => {
-                const newLog = `[${new Date().toISOString()}] INFO: Packet intercepted from agent_${Math.floor(Math.random() * 1000)}`;
-                setLogs(prev => [...prev.slice(-20), newLog]);
-            }, 1500);
-            return () => clearInterval(interval);
+            const wsUrl = import.meta.env.VITE_API_URL
+                ? import.meta.env.VITE_API_URL.replace('http', 'ws') + '/websockets/logs/client_monitor_01'
+                : 'wss://sentinelx-api.monitorix.co.in/api/v1/websockets/logs/client_monitor_01';
+
+            console.log("Connecting to WS:", wsUrl);
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = () => {
+                console.log("Connected to Stream");
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'log') {
+                    setLogs(prev => [...prev.slice(-20), data.log]);
+                } else if (data.type === 'status') {
+                    setAgentStatuses(prev => ({ ...prev, [data.agent]: data.status }));
+                }
+            };
+
+            socket.onclose = () => console.log("Stream closed");
         }
+        return () => {
+            if (socket) socket.close();
+        };
     }, [isLive]);
 
     useEffect(() => {

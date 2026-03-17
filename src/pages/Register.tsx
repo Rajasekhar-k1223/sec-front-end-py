@@ -12,7 +12,8 @@ export default function Register() {
         company_name: '',
         full_name: '',
         email: '',
-        password: ''
+        password: '',
+        plan: 'free'
     });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -100,6 +101,24 @@ export default function Register() {
                                 className="bg-secondary/50"
                                 required
                             />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="plan">Subscription Plan</Label>
+                            <div className="relative">
+                                <select
+                                    id="plan"
+                                    value={formData.plan}
+                                    onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
+                                    className="flex h-10 w-full rounded-md border border-input bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    required
+                                >
+                                    <option value="free">Free Tier (10 Agents)</option>
+                                    <option value="starter">Starter (50 Agents)</option>
+                                    <option value="business">Business (250 Agents)</option>
+                                    <option value="enterprise">Enterprise (1000 Agents)</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div className="space-y-2">

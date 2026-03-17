@@ -8,7 +8,8 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Building, Users } from 'lucide-react';
+import { MoreHorizontal, Building, Users, Crown, Zap, Shield, Calendar, LogIn } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -17,6 +18,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 export interface Tenant {
     id: string;
@@ -30,13 +32,31 @@ export interface Tenant {
 
 interface TenantTableProps {
     tenants: Tenant[];
+    onEdit?: (tenant: Tenant) => void;
+    onDelete?: (tenant: Tenant) => void;
+    onSuspend?: (tenant: Tenant) => void;
+    onViewAgents?: (tenant: Tenant) => void;
+    onImpersonate?: (tenant: Tenant) => void;
 }
 
-export default function TenantTable({ tenants }: TenantTableProps) {
+export default function TenantTable({
+    tenants,
+    onEdit,
+    onDelete,
+    onSuspend,
+    onViewAgents,
+    onImpersonate
+}: TenantTableProps) {
     const statusColor = {
-        active: 'bg-green-500/10 text-green-500 hover:bg-green-500/20',
-        suspended: 'bg-red-500/10 text-red-500 hover:bg-red-500/20',
-        trial: 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20',
+        active: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+        suspended: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
+        trial: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+    };
+
+    const getPlanIcon = (plan: string) => {
+        if (plan === 'Enterprise') return <Crown className="w-3 h-3 mr-1 text-amber-500" />;
+        if (plan === 'Unlimited') return <Zap className="w-3 h-3 mr-1 text-indigo-500" />;
+        return <Shield className="w-3 h-3 mr-1 text-slate-400" />;
     };
 
     return (
@@ -63,21 +83,43 @@ export default function TenantTable({ tenants }: TenantTableProps) {
                             </TableCell>
                             <TableCell>
                                 <Badge variant="outline" className={statusColor[tenant.status]}>
-                                    {tenant.status.toUpperCase()}
+                                    {tenant.status?.toUpperCase() || 'ACTIVE'}
                                 </Badge>
                             </TableCell>
                             <TableCell>
-                                <div className="flex items-center text-sm">
-                                    <Users className="w-4 h-4 mr-2 text-muted-foreground" />
-                                    <span className={tenant.agentCount > tenant.agentLimit ? "text-destructive font-bold" : ""}>
-                                        {tenant.agentCount}
-                                    </span>
-                                    <span className="text-muted-foreground mx-1">/</span>
-                                    {tenant.agentLimit}
+                                <div className="space-y-1.5 min-w-[140px]">
+                                    <div className="flex items-center justify-between text-[10px] font-medium uppercase text-muted-foreground">
+                                        <div className="flex items-center">
+                                            <Users className="w-3 h-3 mr-1" />
+                                            Agents
+                                        </div>
+                                        <span>{Math.round((tenant.agentCount / tenant.agentLimit) * 100)}%</span>
+                                    </div>
+                                    <Progress
+                                        value={(tenant.agentCount / tenant.agentLimit) * 100}
+                                        className={cn(
+                                            "h-1.5",
+                                            (tenant.agentCount / tenant.agentLimit) > 0.9 ? "bg-rose-500/20" : "bg-primary/20"
+                                        )}
+                                        indicatorClassName={(tenant.agentCount / tenant.agentLimit) > 0.9 ? "bg-rose-500" : "bg-primary"}
+                                    />
+                                    <p className="text-[10px] text-muted-foreground text-right italic">
+                                        {tenant.agentCount} of {tenant.agentLimit} used
+                                    </p>
                                 </div>
                             </TableCell>
-                            <TableCell>{tenant.plan}</TableCell>
-                            <TableCell className="text-muted-foreground text-xs">{tenant.createdAt}</TableCell>
+                            <TableCell>
+                                <div className="flex items-center text-xs font-semibold">
+                                    {getPlanIcon(tenant.plan)}
+                                    {tenant.plan}
+                                </div>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-[10px]">
+                                <div className="flex items-center">
+                                    <Calendar className="w-3 h-3 mr-1 opacity-50" />
+                                    {tenant.createdAt}
+                                </div>
+                            </TableCell>
                             <TableCell className="text-right">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -88,10 +130,20 @@ export default function TenantTable({ tenants }: TenantTableProps) {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuItem>Edit Details</DropdownMenuItem>
-                                        <DropdownMenuItem>View Agents</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => onImpersonate?.(tenant)}>
+                                            <LogIn className="w-4 h-4 mr-2" />
+                                            Login as Tenant
+                                        </DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem className="text-destructive">Suspend Tenant</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => onEdit?.(tenant)}>Edit Details</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => onViewAgents?.(tenant)}>View Agents</DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => onSuspend?.(tenant)} className="text-destructive">
+                                            {tenant.status === 'suspended' ? 'Activate Tenant' : 'Suspend Tenant'}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => onDelete?.(tenant)} className="text-destructive">
+                                            Delete Tenant
+                                        </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>

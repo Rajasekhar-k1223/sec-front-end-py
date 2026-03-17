@@ -130,6 +130,7 @@ export default function DashboardLayout() {
                 { icon: Brain, label: 'AI Governance', path: '/ai-gov' },
                 { icon: Cpu, label: 'LLMOps & Knowledge', path: '/llmops' },
                 { icon: Bot, label: 'Automation', path: '/automation' },
+                { icon: Shield, label: 'Policies', path: '/policies' },
             ]
         },
         {
@@ -160,7 +161,7 @@ export default function DashboardLayout() {
     const filteredNavGroups = navGroups.filter(group => {
         // Special Case: Administration Group requires Superuser
         if (group.title === "ADMINISTRATION") {
-            return user?.is_superuser === true;
+            return user?.is_superuser === true || user?.role === 'admin';
         }
 
         if (!group.roles) return true; // No restriction

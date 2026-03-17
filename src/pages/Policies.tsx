@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, FileCode, CheckCircle, AlertCircle } from 'lucide-react';
@@ -41,14 +41,80 @@ export default function Policies() {
         fetchPolicies();
     }, []);
 
+    const [showGenModal, setShowGenModal] = useState(false);
+    const [prompt, setPrompt] = useState('');
+    const [generatedPolicy, setGeneratedPolicy] = useState<any>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleGenerate = async () => {
+        setIsGenerating(true);
+        try {
+            const res = await policiesService.generatePolicy(prompt);
+            setGeneratedPolicy(res.data);
+        } catch (error) {
+            console.error("Failed to generate", error);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+            {showGenModal && (
+                <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <Card className="w-full max-w-2xl shadow-2xl">
+                        <CardHeader>
+                            <CardTitle className="flex items-center">
+                                <Shield className="mr-2 h-5 w-5 text-primary" />
+                                AI Policy Generator
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground">Describe your security requirement in plain English.</p>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {!generatedPolicy ? (
+                                <>
+                                    <textarea
+                                        className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                        placeholder="e.g., Block port 80 for all apps, or Disallow root user in containers"
+                                        value={prompt}
+                                        onChange={e => setPrompt(e.target.value)}
+                                    />
+                                    <div className="flex justify-end space-x-2">
+                                        <Button variant="outline" onClick={() => setShowGenModal(false)}>Cancel</Button>
+                                        <Button onClick={handleGenerate} disabled={isGenerating}>
+                                            {isGenerating ? 'Generating...' : 'Generate Policy'}
+                                        </Button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-semibold text-sm">Generated {generatedPolicy.type} Policy</span>
+                                        <Badge>{generatedPolicy.name}</Badge>
+                                    </div>
+                                    <pre className="bg-secondary/50 p-4 rounded-md text-xs font-mono overflow-auto max-h-[300px]">
+                                        {generatedPolicy.content}
+                                    </pre>
+                                    <div className="flex justify-end space-x-2">
+                                        <Button variant="outline" onClick={() => setGeneratedPolicy(null)}>Back</Button>
+                                        <Button onClick={() => setShowGenModal(false)}>Use Template</Button>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-foreground">Policy As Code</h2>
                     <p className="text-muted-foreground">Manage OPA and Kyverno policies.</p>
                 </div>
                 <div className="flex space-x-2">
+                    <Button variant="outline" onClick={() => setShowGenModal(true)}>
+                        <Shield className="mr-2 h-4 w-4" /> Generate with AI
+                    </Button>
                     <Button>+ New Policy</Button>
                 </div>
             </div>
